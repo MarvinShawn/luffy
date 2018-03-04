@@ -49,6 +49,6 @@ class MongoDBPipeline(object):
 
     def process_item(self, item, spider):
         #需要去重
-        name = item.__class__.__name__
+        name = item.__class__.__name__.lower() + 's'
         self.db[name].update({'tag':item['tag']},{'$set':item},True)
         return item
