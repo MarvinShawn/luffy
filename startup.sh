@@ -1,2 +1,2 @@
 #!/bin/sh
-/usr/local/bin/scrapy crawl qiushi
+/usr/bin/scrapy crawl qiushi
