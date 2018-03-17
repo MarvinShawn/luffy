@@ -38,7 +38,9 @@ class QiushiSpider(Spider):
 
     def parse_detail(self,response):
         item = response.xpath('//div[@class="content"]').extract_first()
-        content_text = item.replace('<div class="content">',"").replace("</div>","").replace("<br>","\n")
+         # 使用正则替换
+        reg = re.compile('(<div class="content">|</div>|<span>|</span>)')
+        content_text = reg.sub("",item).replace("<br>","\n")
         if content_text:
             qs = response.meta['item']
             qs['contentText'] = content_text.strip()
@@ -103,7 +105,9 @@ class QiushiSpider(Spider):
                     url = response.urljoin(detail_url)
                     yield Request(url=url, callback=self.parse_detail, meta={"item": qiubai})
                 else:
-                    result = content[0].replace("<span>", "").replace("</span>", "").replace("<br>", "\n")
+                    creg = re.compile('(<span>|</span>)')
+                    result = creg.sub("", content[0]).replace("<br>", "\n")
+                    # result = content[0].replace("<span>", "").replace("</span>", "").replace("<br>", "\n")
                     if result:
                         qiubai['contentText'] = result.strip()
 
