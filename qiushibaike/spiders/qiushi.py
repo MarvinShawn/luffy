@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from scrapy import Spider,Request,log
+import  re
 
 from qiushibaike.items import HotItem,NewItem,ImageItem,TextItem
 
@@ -16,7 +17,6 @@ class QiushiSpider(Spider):
     hotImg_url = 'https://www.qiushibaike.com/imgrank/'
     #文字
     word_url = 'https://www.qiushibaike.com/text/'
-
 
     def start_requests(self):
         yield Request(self.hot_url,callback=self.parse_hot)
@@ -36,9 +36,17 @@ class QiushiSpider(Spider):
     def parse_word(self,response):
         return self.parse_item(response, TextItem)
 
+    def parse_detail(self,response):
+        item = response.xpath('//div[@class="content"]').extract_first()
+        content_text = item.replace('<div class="content">',"").replace("</div>","").replace("<br>","\n")
+        if content_text:
+            qs = response.meta['item']
+            qs['contentText'] = content_text.strip()
+            yield qs
+
+
 
     def parse_item(self,response,cls):
-        print('current Item = ',cls.__name__)
         for item in response.xpath('//div[@id="content-left"]/div[contains(@class,"article block untagged mb15")]'):
             qiubai = cls(comments=0,likes=0,contentText=None,nickname=None,avatar=None,age=0,gender=True,contentImg=None,ratio=0,tag=None)
 
@@ -64,22 +72,12 @@ class QiushiSpider(Spider):
             if age:
                 qiubai['age'] = int(age)
 
-
             #性别
             gender = item.xpath('./div[@class="author clearfix"]/div[@class="articleGender womenIcon"]')
             if gender:
                 qiubai['gender'] = False
             else:
                 qiubai['gender'] = True
-
-            #内容
-            content = item.xpath('./a/div[@class="content"]/span/text()').extract()
-            if content:
-                con = ''
-                for str in content:
-                    con += str
-                qiubai['contentText'] = con.strip()
-
 
             #内容图片
             content_img = item.xpath('./div[@class="thumb"]/a/img/@src').extract_first()
@@ -92,11 +90,22 @@ class QiushiSpider(Spider):
             if like:
                 qiubai['likes'] = int(like)
 
-
             #评论数
             comment = item.xpath('./div[@class="stats"]/span[@class="stats-comments"]/a/i/text()').extract_first()
             if comment:
                 qiubai['comments'] = int(comment)
+
+            # 内容
+            content = item.xpath('./a/div[@class="content"]/span').extract()
+            if content:
+                if len(content) > 1:  # 包含了查看全部
+                    detail_url = item.xpath('./a/@href').extract_first()
+                    url = response.urljoin(detail_url)
+                    yield Request(url=url, callback=self.parse_detail, meta={"item": qiubai})
+                else:
+                    result = content[0].replace("<span>", "").replace("</span>", "").replace("<br>", "\n")
+                    if result:
+                        qiubai['contentText'] = result.strip()
 
             yield qiubai
 
@@ -116,7 +125,6 @@ class QiushiSpider(Spider):
                 yield Request(url=url, callback=self.parse_hotimg)
             elif cls is TextItem:
                 yield Request(url=url, callback=self.parse_word)
-
 
 
 
