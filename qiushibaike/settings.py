@@ -90,8 +90,9 @@ ITEM_PIPELINES = {
 
 # Enable and configure HTTP caching (disabled by default)
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
-#HTTPCACHE_ENABLED = True
-#HTTPCACHE_EXPIRATION_SECS = 0
-#HTTPCACHE_DIR = 'httpcache'
-#HTTPCACHE_IGNORE_HTTP_CODES = []
-#HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+#这几行注释的作用是，Scrapy会缓存你有的Requests!当你再次请求时，如果存在缓存文档则返回缓存文档，而不是去网站请求
+HTTPCACHE_ENABLED = True
+HTTPCACHE_EXPIRATION_SECS = 0
+HTTPCACHE_DIR = 'httpcache'
+HTTPCACHE_IGNORE_HTTP_CODES = []
+HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
