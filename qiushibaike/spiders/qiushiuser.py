@@ -56,13 +56,61 @@ class QiushiuserSpider(Spider):
             if user_url:
                 user['userId'] =  re.findall(r"/users/(.+?)/", user_url)[0]
                 t_url = response.urljoin(user_url)
-                yield Request(url=t_url,callback=self.parse_user,meta=user)
+                yield Request(url=t_url,callback=self.parse_user,meta={"item":user})
+
+
+            # 下一页 更多除外
+            next_page = response.xpath('//div[@id="content-left"]/ul[@class="pagination"]/li[last()]/a/@href').extract_first()
+            has_more = response.xpath('//div[@id="content-left"]/ul[@class="pagination"]/li[last()]/a/span/text()').extract_first()
+
+            if has_more and '更多' in has_more:
+                pass
+            elif next_page:
+                url = response.urljoin(next_page)
+                yield Request(url=url,callback=self.parse)
 
 
 
     def parse_user(self,response):
-        user = response.meta
+
         user_main = response.xpath('//div[@class="user-main clearfix"]')
+        user = QiushiUser(userId=None,
+                          gender=True,
+                          age=0,
+                          nickname=None,
+                          marriage=None,
+                          constellation=None,
+                          job=None,
+                          hometown=None,
+                          qiushiage=None,
+                          avatar=None,
+                          fens=0,
+                          focus=0,
+                          works=0,
+                          comments=0,
+                          smilefaces=0,
+                          handpicks=0,
+                          isOpenTimeline=False
+                          )
+        if "item" in response.meta:
+            user = response.meta["item"]
+        else:#nickname userId avatar
+            user_header = user_main.xpath('./div[@class="user-header"]')
+
+            user_id = user_header.xpath('./a[@class="user-header-avatar"]/@href').extract_first()
+            if user_id:
+                user["userId"] = re.findall(r"/users/(.+?)/", user_id)[0]
+
+            user_avatar = user_header.xpath('./a[@class="user-header-avatar"]/img/@src').extract_first()
+            if user_avatar:
+                user["avatar"] = "https:" + user_avatar
+
+            user_nickname = user_header.xpath('./div[@class="user-header-cover"]/h2/text()').extract_first()
+            if user_nickname:
+                user["nickname"] = user_nickname
+
+
+
         if user_main:
             user["isOpenTimeline"] = True
             user_statis1 = user_main.xpath('./div[@class="user-col-left"]/div[@class="user-statis user-block"][1]')
@@ -114,5 +162,28 @@ class QiushiuserSpider(Spider):
                 user["qiushiage"] =   int(qiushiage.replace("天",""))
 
         yield user
+
+        #好友
+        followers_url = response.urljoin('followers')
+        yield Request(url=followers_url,callback=self.parse_followers)
+
+        #最近访客
+        comminguser_items = user_main.xpath('./div[@class="user-col-left"]/div[@class="user-statis user-block"][last()]/div/ul/li/a[1]/@href').extract()
+        for comminguser_item in comminguser_items:
+            user_url = "http://www.qiushibaike.com%s" % comminguser_item
+            yield Request(url=user_url, callback=self.parse_user)
+
+
+
+    def parse_followers(self,response):
+        #关注的糗友,粉丝，互粉的人
+        follower_items = response.xpath('//div[@class="user-block user-follow"]/ul/li/a[1]/@href').extract()
+        for item in follower_items:
+            user_url = "http://www.qiushibaike.com%s"%item
+            yield Request(url=user_url,callback=self.parse_user)
+
+
+
+
 
 

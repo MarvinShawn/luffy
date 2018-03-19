@@ -6,6 +6,7 @@
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
 from scrapy.exceptions import DropItem
+from qiushibaike.items import QiushiItem,QiushiUser
 import pymongo
 from PIL import  Image
 from io import BytesIO
@@ -14,15 +15,18 @@ import requests
 
 class ImgRatioPipeline(object):
     def process_item(self,item,spider):
-        if item['contentImg']:
-            try:
-                res = requests.get(item['contentImg'])
-                tmpImg = BytesIO(res.content)
-                img = Image.open(tmpImg)
-                w, h = img.size
-                item['ratio'] = round(w / h, 4)
-            except Exception:
-                raise DropItem("contentImg is invalid in %s" % item)
+        if isinstance(item, QiushiItem):
+            if item['contentImg']:
+                try:
+                    res = requests.get(item['contentImg'])
+                    tmpImg = BytesIO(res.content)
+                    img = Image.open(tmpImg)
+                    w, h = img.size
+                    item['ratio'] = round(w / h, 4)
+                except Exception:
+                    raise DropItem("contentImg is invalid in %s" % item)
+        elif isinstance(item, QiushiUser):
+            pass
         return item
 
 
@@ -50,5 +54,8 @@ class MongoDBPipeline(object):
     def process_item(self, item, spider):
         #需要去重
         name = item.__class__.__name__.lower() + 's'
-        self.db[name].update({'tag':item['tag']},{'$set':item},True)
+        if isinstance(item, QiushiItem):
+            self.db[name].update({'tag':item['tag']},{'$set':item},True)
+        elif isinstance(item, QiushiUser):
+            self.db[name].update({'userId': item['userId']}, {'$set': item}, True)
         return item
