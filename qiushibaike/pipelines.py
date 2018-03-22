@@ -12,7 +12,7 @@ from PIL import  Image
 from io import BytesIO
 import requests
 
-
+# 这里是自己实现的获取图片宽高比 也可以 scrapy 提供的下载图片的ImagesPipeline
 class ImgRatioPipeline(object):
     def process_item(self,item,spider):
         if isinstance(item, QiushiItem):

@@ -21,23 +21,7 @@ class QiushiItem(Item):
     contentImg = Field()
     ratio = Field()
     tag = Field()
-
-# 热门
-class HotItem(QiushiItem):
-    pass
-
-# 24小时
-class NewItem(QiushiItem):
-    pass
-
-# 热图
-class ImageItem(QiushiItem):
-    pass
-
-# 文字
-class TextItem(QiushiItem):
-    pass
-
+    type = Field()
 
 
 class QiushiUser(Item):

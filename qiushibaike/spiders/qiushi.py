@@ -2,7 +2,7 @@
 from scrapy import Spider,Request,log
 import  re
 
-from qiushibaike.items import HotItem,NewItem,ImageItem,TextItem
+from qiushibaike.items import QiushiItem
 
 
 class QiushiSpider(Spider):
@@ -17,24 +17,26 @@ class QiushiSpider(Spider):
     hotImg_url = 'https://www.qiushibaike.com/imgrank/'
     #文字
     word_url = 'https://www.qiushibaike.com/text/'
+    #穿越
+    pass_url = 'https://www.qiushibaike.com/history/'
+    #糗图
+    qiutu_url = 'https://www.qiushibaike.com/pic/'
+    #新鲜
+    fresh_url = 'https://www.qiushibaike.com/textnew/'
+
+
 
     def start_requests(self):
-        yield Request(self.hot_url,callback=self.parse_hot)
-        yield Request(self.tf_url,callback=self.parse_24hours)
-        yield Request(self.hotImg_url,callback=self.parse_hotimg)
-        yield Request(self.word_url,callback=self.parse_word)
+        yield Request(self.hot_url,callback=self.parse_item,meta={"type":0})
+        yield Request(self.tf_url,callback=self.parse_item,meta={"type":1})
+        yield Request(self.hotImg_url,callback=self.parse_item,meta={"type":2})
+        yield Request(self.word_url,callback=self.parse_item,meta={"type":3})
+        yield Request(self.pass_url,callback=self.parse_item,meta={"type":4})
+        yield Request(self.qiutu_url,callback=self.parse_item,meta={"type":5})
+        yield Request(self.fresh_url,callback=self.parse_item,meta={"type":6})
 
-    def parse_hot(self,response):
-        return self.parse_item(response,HotItem)
 
-    def parse_24hours(self,response):
-        return self.parse_item(response, NewItem)
 
-    def parse_hotimg(self,response):
-        return self.parse_item(response, ImageItem)
-
-    def parse_word(self,response):
-        return self.parse_item(response, TextItem)
 
     def parse_detail(self,response):
         item = response.xpath('//div[@class="content"]').extract_first()
@@ -48,9 +50,21 @@ class QiushiSpider(Spider):
 
 
 
-    def parse_item(self,response,cls):
+    def parse_item(self,response):
+
         for item in response.xpath('//div[@id="content-left"]/div[contains(@class,"article block untagged mb15")]'):
-            qiubai = cls(comments=0,likes=0,contentText=None,nickname=None,avatar=None,age=0,gender=True,contentImg=None,ratio=0,tag=None)
+            qiubai = QiushiItem(comments=0,
+                                likes=0,
+                                contentText=None,
+                                nickname=None,
+                                avatar=None,
+                                age=0,
+                                gender=True,
+                                contentImg=None,
+                                ratio=0,
+                                tag=None,
+                                type=response.meta['type']
+                                )
 
             # 糗事tagId
             tag = item.xpath('@id').extract_first()
@@ -62,12 +76,10 @@ class QiushiSpider(Spider):
             if icon:
                 qiubai['avatar'] =  "https:" + icon
 
-
             #昵称
             nickname = item.xpath('./div[@class="author clearfix"]/a[2]/h2/text()').extract_first()
             if nickname:
                 qiubai['nickname'] = nickname.strip()
-
 
             #年龄
             age = item.xpath('./div[@class="author clearfix"]/div/text()').extract_first()
@@ -85,7 +97,6 @@ class QiushiSpider(Spider):
             content_img = item.xpath('./div[@class="thumb"]/a/img/@src').extract_first()
             if content_img:
                 qiubai['contentImg'] = "https:" + content_img
-
 
             #喜欢数
             like = item.xpath('./div[@class="stats"]/span[@class="stats-vote"]/i/text()').extract_first()
@@ -121,14 +132,8 @@ class QiushiSpider(Spider):
             pass
         elif next_page:
             url = response.urljoin(next_page)
-            if cls is HotItem:
-                yield Request(url=url, callback=self.parse_hot)
-            elif cls is NewItem:
-                yield Request(url=url, callback=self.parse_24hours)
-            elif cls is ImageItem:
-                yield Request(url=url, callback=self.parse_hotimg)
-            elif cls is TextItem:
-                yield Request(url=url, callback=self.parse_word)
+            yield  Request(url=url,callback=self.parse_item,meta={"type":response.meta["type"]})
+
 
 
 
