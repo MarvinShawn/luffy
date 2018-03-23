@@ -52,7 +52,7 @@ class QiushiSpider(Spider):
 
     def parse_item(self,response):
 
-        for item in response.xpath('//div[@id="content-left"]/div[contains(@class,"article block untagged mb15")]'):
+        for item in response.xpath('//div[contains(@class,"article block untagged mb15")]'):
             qiubai = QiushiItem(comments=0,
                                 likes=0,
                                 contentText=None,
