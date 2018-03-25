@@ -24,18 +24,13 @@ class QiushiSpider(Spider):
     #新鲜
     fresh_url = 'https://www.qiushibaike.com/textnew/'
 
+    urs = [hot_url,tf_url,hotImg_url,word_url,pass_url,qiutu_url,fresh_url]
+
 
 
     def start_requests(self):
-        yield Request(self.hot_url,callback=self.parse_item,meta={"type":0})
-        yield Request(self.tf_url,callback=self.parse_item,meta={"type":1})
-        yield Request(self.hotImg_url,callback=self.parse_item,meta={"type":2})
-        yield Request(self.word_url,callback=self.parse_item,meta={"type":3})
-        yield Request(self.pass_url,callback=self.parse_item,meta={"type":4})
-        yield Request(self.qiutu_url,callback=self.parse_item,meta={"type":5})
-        yield Request(self.fresh_url,callback=self.parse_item,meta={"type":6})
-
-
+        for idx,url in enumerate(self.urs):
+            yield Request(url, callback=self.parse_item, meta={"type": idx})
 
 
     def parse_detail(self,response):
