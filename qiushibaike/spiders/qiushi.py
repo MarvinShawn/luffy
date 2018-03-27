@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from scrapy import Spider,Request,log
-import  re
-
+from scrapy.statscollectors import MemoryStatsCollector
+import re
 from qiushibaike.items import QiushiItem
+
+
 
 
 class QiushiSpider(Spider):
@@ -27,7 +29,6 @@ class QiushiSpider(Spider):
     urs = [hot_url,tf_url,hotImg_url,word_url,pass_url,qiutu_url,fresh_url]
 
 
-
     def start_requests(self):
         for idx,url in enumerate(self.urs):
             yield Request(url, callback=self.parse_item, meta={"type": idx})
@@ -46,7 +47,6 @@ class QiushiSpider(Spider):
 
 
     def parse_item(self,response):
-
         for item in response.xpath('//div[contains(@class,"article block untagged mb15")]'):
             qiubai = QiushiItem(comments=0,
                                 likes=0,
@@ -128,7 +128,6 @@ class QiushiSpider(Spider):
         elif next_page:
             url = response.urljoin(next_page)
             yield  Request(url=url,callback=self.parse_item,meta={"type":response.meta["type"]})
-
 
 
 

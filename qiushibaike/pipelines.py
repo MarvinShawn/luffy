@@ -33,15 +33,30 @@ class ImgRatioPipeline(object):
 
 class MongoDBPipeline(object):
 
+
+    def send_email(self,SMTP_host, from_account, from_passwd, to_account, subject, content):
+        from email.header import Header
+        from email.mime.text import MIMEText
+        import smtplib
+        email_client = smtplib.SMTP(SMTP_host,25)
+        email_client.login(from_account, from_passwd)
+        msg = MIMEText(content, 'plain', 'utf-8')
+        msg['Subject'] = Header(subject, 'utf-8')
+        msg['From'] = from_account
+        msg['To'] = to_account
+        email_client.sendmail(from_account, to_account, msg.as_string())
+        email_client.quit()
+
     def __init__(self,mongo_uri,mongo_db):
         self.mongo_uri = mongo_uri
         self.mongo_db = mongo_db
 
     @classmethod
     def from_crawler(cls,crawler):
+
         return cls(
             mongo_uri=crawler.settings.get('MONGO_URI'),
-            mongo_db=crawler.settings.get('MONGO_DB')
+            mongo_db=crawler.settings.get('MONGO_DB'),
         )
 
     def open_spider(self,spider):
@@ -50,6 +65,19 @@ class MongoDBPipeline(object):
 
     def close_spider(self,spider):
         self.client.close()
+        dic =  spider.crawler.stats.get_stats()
+
+        send_content = ""
+        for k,v in dic.items():
+            send_content = send_content+k+"----->"+str(v)+"\n"
+
+        self.send_email("smtp.21cn.com",
+                        "marvinshawn@21cn.com",
+                        "123456aaa",
+                        "511457709@qq.com",
+                        "Scrapy Report",
+                        send_content
+                        )
 
     def process_item(self, item, spider):
         #需要去重
