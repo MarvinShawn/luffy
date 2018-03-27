@@ -38,14 +38,17 @@ class MongoDBPipeline(object):
         from email.header import Header
         from email.mime.text import MIMEText
         import smtplib
+        print("开始发送邮件")
         email_client = smtplib.SMTP(SMTP_host,25)
         email_client.login(from_account, from_passwd)
         msg = MIMEText(content, 'plain', 'utf-8')
         msg['Subject'] = Header(subject, 'utf-8')
         msg['From'] = from_account
         msg['To'] = to_account
+        email_client.set_debuglevel(1)
         email_client.sendmail(from_account, to_account, msg.as_string())
         email_client.quit()
+        print("发送邮件完成")
 
     def __init__(self,mongo_uri,mongo_db):
         self.mongo_uri = mongo_uri
@@ -64,20 +67,24 @@ class MongoDBPipeline(object):
         self.db = self.client[self.mongo_db]
 
     def close_spider(self,spider):
+
+        if spider.name == "qiushiu":
+            items_count = self.db["qiushiitems"].find({}).count()
+            dic = spider.crawler.stats.get_stats()
+            send_content = "qiushi_item_total_count -----> %d\n"%items_count
+            for k, v in dic.items():
+                send_content = send_content + k + " -----> " + str(v) + "\n"
+
+            self.send_email("smtp.2980.com",
+                            "marvinshawn@2980.com",
+                            "123456qqq",
+                            "511457709@qq.com",
+                            "Scrapy Report",
+                            send_content
+                            )
         self.client.close()
-        dic =  spider.crawler.stats.get_stats()
 
-        send_content = ""
-        for k,v in dic.items():
-            send_content = send_content+k+"----->"+str(v)+"\n"
 
-        self.send_email("smtp.21cn.com",
-                        "marvinshawn@21cn.com",
-                        "123456aaa",
-                        "511457709@qq.com",
-                        "Scrapy Report",
-                        send_content
-                        )
 
     def process_item(self, item, spider):
         #需要去重
