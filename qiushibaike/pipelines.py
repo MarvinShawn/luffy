@@ -68,6 +68,7 @@ class MongoDBPipeline(object):
 
     def close_spider(self,spider):
 
+	'''
         if spider.name == "qiushi":
             items_count = self.db["qiushiitems"].find({}).count()
             dic = spider.crawler.stats.get_stats()
@@ -77,11 +78,12 @@ class MongoDBPipeline(object):
 
             self.send_email("smtp.2980.com",
                             "marvinshawn@2980.com",
-                            "123456qqq",
+                            "********",
                             "511457709@qq.com",
                             "Scrapy Report",
                             send_content
                             )
+	'''
         self.client.close()
 
 
